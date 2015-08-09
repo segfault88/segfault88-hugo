@@ -11,5 +11,6 @@ theme: "purehugo"
 params:
     twitterName: "segfault88"
     githubName: "segfault88"
+    linkedin: https://nz.linkedin.com/pub/malcolm-lockyer/b4/387/766
     description: "Go, Ruby and other stuff"
-    # # - google_analytics: "UA-xxxxxx-xx"
+    google_analytics: "UA-66120742-1"
