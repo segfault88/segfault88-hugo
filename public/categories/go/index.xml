@@ -2,19 +2,248 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Go on segfault88 / Malcolm Lockyer</title>
-    <link>http://segfault88.github.io/categories/go/</link>
+    <link>http://localhost:1313/categories/go/</link>
     <description>Recent content in Go on segfault88 / Malcolm Lockyer</description>
     <generator>Hugo -- gohugo.io</generator>
     <lastBuildDate>Sun, 09 Aug 2015 17:30:00 +0000</lastBuildDate>
-    <atom:link href="http://segfault88.github.io/categories/go/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://localhost:1313/categories/go/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>Ruby vs. Go 1</title>
-      <link>http://segfault88.github.io/posts/rubyvgo1/</link>
+      <link>http://localhost:1313/posts/rubyvgo1/</link>
       <pubDate>Sun, 09 Aug 2015 17:30:00 +0000</pubDate>
       
-      <guid>http://segfault88.github.io/posts/rubyvgo1/</guid>
-      <description>&lt;p&gt;foo&lt;/p&gt;
+      <guid>http://localhost:1313/posts/rubyvgo1/</guid>
+      <description>
+
+&lt;p&gt;A co-worker built a simple internal tool in Ruby with Sinatra. This tool is essentially a simple front end to a bunch of little simple REST apis. It is a bit slow, but that is okay a ~30 second load time is okay since it is only occasional internal use. I thought to myself looking at the code, with not much more effort you could build a solution in Go / Golang that would work a whole lot better. This isn&amp;rsquo;t the most scientific of comparisons, and you could do a better job with EventMachine - but for now, this is about simulating what the &amp;lsquo;real life&amp;rsquo; ruby solution looks like. The whole project is available on Github here: &lt;a href=&#34;https://github.com/segfault88/rubyvgo1&#34;&gt;https://github.com/segfault88/rubyvgo1&lt;/a&gt; so you can follow along.&lt;/p&gt;
+
+&lt;h2 id=&#34;the-api:83f2b8cce6add0719eda54d48c55f20b&#34;&gt;The API&lt;/h2&gt;
+
+&lt;p&gt;I built a simple simulation of the APIs being called. I threw something together in Go, basically it&amp;rsquo;s like this:
+* /slow - sleeps for 200-400 ms then returns
+* /bad - approximately 50% of the time sleep for 50-100 ms then return, otherwise wait 3 seconds and return
+* /timeout - wait 10 seconds then return&lt;/p&gt;
+
+&lt;p&gt;The whole thing is simply this:&lt;/p&gt;
+
+&lt;pre&gt;
+    &lt;code data-language=&#34;go&#34;&gt;package main
+
+import (
+    &#34;fmt&#34;
+    &#34;math/rand&#34;
+    &#34;net/http&#34;
+    &#34;time&#34;
+
+    &#34;github.com/zenazn/goji&#34;
+    &#34;github.com/zenazn/goji/web&#34;
+)
+
+func slow(c web.C, w http.ResponseWriter, r *http.Request) {
+    n := time.Duration(200 + (rand.Int31n(200)))
+    time.Sleep(n * time.Millisecond)
+    fmt.Fprintf(w, &#34;Done %d ms&#34;, n)
+}
+
+func bad(c web.C, w http.ResponseWriter, r *http.Request) {
+    if rand.Float32() &lt;= 0.5 {
+        n := time.Duration(50 + (rand.Int31n(50)))
+        time.Sleep(n * time.Millisecond)
+        fmt.Fprintf(w, &#34;Done %d ms&#34;, n)
+    } else {
+        time.Sleep(3 * time.Second)
+        fmt.Fprint(w, &#34;This api is bad!&#34;)
+    }
+}
+
+func timeout(c web.C, w http.ResponseWriter, r *http.Request) {
+    time.Sleep(10 * time.Second)
+    fmt.Fprint(w, &#34;That took a while!&#34;)
+}
+
+func main() {
+    rand.Seed(time.Now().UnixNano())
+    goji.Get(&#34;/slow&#34;, slow)
+    goji.Get(&#34;/bad&#34;, bad)
+    goji.Get(&#34;/timeout&#34;, timeout)
+    goji.Serve()
+}
+    &lt;/code&gt;
+&lt;/pre&gt;
+
+&lt;h2 id=&#34;ruby-implementation:83f2b8cce6add0719eda54d48c55f20b&#34;&gt;Ruby implementation&lt;/h2&gt;
+
+&lt;p&gt;The entire Ruby version with Sinatra looks like this:&lt;/p&gt;
+
+&lt;pre&gt;
+    &lt;code data-language=&#34;ruby&#34;&gt;require &#39;rubygems&#39;
+require &#39;sinatra/base&#39;
+require &#39;net/http&#39;
+
+PORT=8000
+
+class MyApp &lt; Sinatra::Base
+  get &#39;/&#39; do
+    send_file &#39;index.html&#39;
+  end
+
+  get &#39;/slow&#39; do
+    t1 = Time.now
+    Net::HTTP.get(URI(&#34;http://localhost:#{PORT}/slow&#34;))
+    &#34;&lt;span class=\&#34;label label-success\&#34;&gt;success #{(Time.now - t1).round(2)}&lt;/span&gt;&#34;
+  end
+
+  get &#39;/bad&#39; do
+    t1 = Time.now
+    Net::HTTP.get(URI(&#34;http://localhost:#{PORT}/bad&#34;))
+    t = Time.now - t1
+    &#34;&lt;span class=\&#34;label label-#{t &gt; 0.5 ? &#34;danger&#34; : &#34;success&#34;}\&#34;&gt;#{t &gt; 0.5 ? &#34;bad&#34; : &#34;good&#34;} #{(t).round(2)}&lt;/span&gt;&#34;
+  end
+
+  get &#39;/timeout&#39; do
+    t1 = Time.now
+    Net::HTTP.get(URI(&#34;http://localhost:#{PORT}/timeout&#34;))
+    &#34;&lt;span class=\&#34;label label-danger\&#34;&gt;fail #{(Time.now - t1).round(2)}&lt;/span&gt;&#34;
+  end
+end
+    &lt;/code&gt;
+&lt;/pre&gt;
+
+&lt;p&gt;So it looks like this:
+&lt;img src=&#34;http://localhost:1313/images/rubyvgo1.png&#34; alt=&#34;ruby version&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;The first 2 columns load 2-400ms. Column 3 and 4 loads in 50-100ms 50% of the time, 3 seconds otherwise. Column 5 takes 10 seconds.&lt;/p&gt;
+
+&lt;h2 id=&#34;go-simple:83f2b8cce6add0719eda54d48c55f20b&#34;&gt;Go simple&lt;/h2&gt;
+
+&lt;p&gt;Go&amp;rsquo;s net/http package is GREAT. We can make a similar system, that actually looks pretty similar to what we do in Ruby. All we need is this:&lt;/p&gt;
+
+&lt;pre&gt;
+    &lt;code data-language=&#34;go&#34;&gt;func slow(c web.C, w http.ResponseWriter, r *http.Request) {
+    t1 := time.Now()
+    _, err := http.Get(fmt.Sprintf(&#34;http://localhost:%d/slow&#34;, Port))
+    if err != nil {
+        panic(err) // most basic version, lacking error handling
+    }
+    fmt.Fprintf(w, &#34;&lt;span class=\&#34;label label-success\&#34;&gt;success %s&lt;/span&gt;&#34;, time.Now().Sub(t1))
+}
+&lt;/code&gt;
+&lt;/pre&gt;
+
+&lt;p&gt;This is great, it loads a bunch faster. However, the tool works by doing an AJAX request for each &amp;lsquo;cell&amp;rsquo;. Normal brower rules means that only 2 AJAX requests can be outstanding. So it loads a bit faster, and potentially allows more users (the Ruby version only has 2 workers which get blocked when doing the API call), it&amp;rsquo;s not that much faster. Sadface, fail. Let&amp;rsquo;s try another way.&lt;/p&gt;
+
+&lt;h2 id=&#34;go-polling:83f2b8cce6add0719eda54d48c55f20b&#34;&gt;Go polling&lt;/h2&gt;
+
+&lt;p&gt;So, let&amp;rsquo;s kick off go-routines immediately on page load, then send updates in batches. Check out the whole file here: &lt;a href=&#34;https://github.com/segfault88/rubyvgo1/blob/master/go-poll/main.go&#34;&gt;https://github.com/segfault88/rubyvgo1/blob/master/go-poll/main.go&lt;/a&gt; - this is pretty easy, the interesting part is really this:&lt;/p&gt;
+
+&lt;pre&gt;
+    &lt;code data-language=&#34;go&#34;&gt;func callSlow(i int, j int, wg *sync.WaitGroup, r *chan Result) {
+    defer wg.Done()
+    t1 := time.Now()
+    _, err := http.Get(fmt.Sprintf(&#34;http://localhost:%d/slow&#34;, APIPort))
+    panicIfErr(err)
+    *r &lt;- Result{i, j, &#34;success&#34;, fmt.Sprintf(&#34;success %s&#34;, time.Now().Sub(t1))}
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Here we simply feed the result out on a channel and use a waitgroup to keep track of when the scan is done. Then, when the browser comes along, all we do is package up the updates waiting in the channel and send it along as JSON:&lt;/p&gt;
+
+&lt;pre&gt;
+    &lt;code data-language=&#34;go&#34;&gt;response := struct {
+        Messages []Result `json:&#34;results&#34;`
+        Done     bool     `json:&#34;done&#34;`
+    }{
+        make([]Result, 0),
+        scanner.done,
+    }
+
+    // grab all the waiting results
+    func() {
+        for {
+            select {
+            case m := &lt;-scanner.results:
+                response.Messages = append(response.Messages, m)
+            default:
+                return
+            }
+        }
+    }()
+
+    // marshal and send json
+    json, err := json.Marshal(&amp;response)
+    panicIfErr(err)
+    w.Header().Set(&#34;Content-Type&#34;, &#34;application/json&#34;)
+    w.Write(json)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This works muuuch faster!&lt;/p&gt;
+
+&lt;h2 id=&#34;go-websocket:83f2b8cce6add0719eda54d48c55f20b&#34;&gt;Go websocket&lt;/h2&gt;
+
+&lt;p&gt;Since we&amp;rsquo;re here, lets also try a websocket. Using the &amp;ldquo;github.com/gorilla/websocket&amp;rdquo; library makes it a snap to upgrade to a websocket. Again, the code is here: &lt;a href=&#34;https://github.com/segfault88/rubyvgo1/blob/master/go-websocket/main.go&#34;&gt;https://github.com/segfault88/rubyvgo1/blob/master/go-websocket/main.go&lt;/a&gt; - all you need to do is:&lt;/p&gt;
+
+&lt;pre&gt;
+    &lt;code data-language=&#34;go&#34;&gt;var (
+    upgrader = websocket.Upgrader{
+        ReadBufferSize:  1024,
+        WriteBufferSize: 1024,
+    }
+)
+
+func wsRoute(w http.ResponseWriter, r *http.Request) {
+    ws, err := upgrader.Upgrade(w, r, nil)
+    if err != nil {
+        log.Println(err)
+        return
+    }
+
+    scanServices(ws)
+}
+&lt;/code&gt;
+&lt;/pre&gt;
+
+&lt;p&gt;Then you can go ahead and use the websocket to write messages straight to the browser. This is definately the fastest way to go!&lt;/p&gt;
+
+&lt;pre&gt;
+    &lt;code data-language=&#34;go&#34;&gt;func callSlow(i int, j int, wg *sync.WaitGroup, r chan Result) {
+    defer wg.Done()
+    t1 := time.Now()
+    _, err := http.Get(fmt.Sprintf(&#34;http://localhost:%d/slow&#34;, APIPort))
+    panicIfErr(err)
+    r &lt;- Result{i, j, &#34;success&#34;, fmt.Sprintf(&#34;success %s&#34;, time.Now().Sub(t1))}
+}
+&lt;/code&gt;
+&lt;/pre&gt;
+
+&lt;p&gt;Now pull from the channel, marshal the JSON and write it to the client:
+&lt;pre&gt;
+    &lt;code data-language=&#34;go&#34;&gt;for {
+        select {
+        case msg := &amp;lt;-messages:
+            json, err := json.Marshal(msg)
+            panicIfErr(err)
+            ws.WriteMessage(websocket.TextMessage, json)
+        }
+    }
+&lt;/code&gt;
+&lt;/pre&gt;&lt;/p&gt;
+
+&lt;p&gt;Easy, and really fast.&lt;/p&gt;
+
+&lt;h2 id=&#34;comparison:83f2b8cce6add0719eda54d48c55f20b&#34;&gt;Comparison&lt;/h2&gt;
+
+&lt;p&gt;I did a quick record to a YouTube video to show the relative versions.&lt;/p&gt;
+
+&lt;iframe width=&#34;420&#34; height=&#34;315&#34; src=&#34;https://www.youtube.com/embed/YmZ8f6ToUhg&#34; frameborder=&#34;0&#34; allowfullscreen&gt;&lt;/iframe&gt;
+
+&lt;p&gt;Ruby is slow, it&amp;rsquo;s stuck with 2 workers so it blocks a lot. The go version is a fair bit faster, but the limit of 2 outstanding AJAX connections makes it slowish. The polling version is pretty good, and the websocket version is excellent.&lt;/p&gt;
+
+&lt;h2 id=&#34;conclusion:83f2b8cce6add0719eda54d48c55f20b&#34;&gt;Conclusion&lt;/h2&gt;
+
+&lt;p&gt;So the original idea for this post is to show that with a &lt;strong&gt;little&lt;/strong&gt; more effort, it&amp;rsquo;s easy to get a much better result working in Go. If you look a pure number of lines the go websocket version is something like 3x more than Ruby. However, it works so much faster, will &amp;lsquo;scale&amp;rsquo; and IMO easier to work with in the future.&lt;/p&gt;
+
+&lt;p&gt;Questions, comments? Hit me up on twitter or github. Happy hacking!&lt;/p&gt;
 </description>
     </item>
     
