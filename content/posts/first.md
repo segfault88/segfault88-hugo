@@ -32,4 +32,4 @@ func slow(c web.C, w http.ResponseWriter, r *http.Request) {
 	</code>
 </pre>
 
-Noice!
+Noice! Test change 2.
