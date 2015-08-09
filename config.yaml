@@ -1,0 +1,15 @@
+---
+contentdir: "content"
+layoutdir: "layouts"
+publishdir: "public"
+indexes:
+    category: "categories"
+baseurl: "http://segfault88.github.io/"
+title: "segfault88 / Malcolm Lockyer"
+canonifyurls: true
+theme: "purehugo"
+params:
+    twitterName: "segfault88"
+    githubName: "segfault88"
+    description: "Go, Ruby and other stuff"
+    # # - google_analytics: "UA-xxxxxx-xx"
