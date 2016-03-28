@@ -25,4 +25,4 @@ So as a full time Go developer now with very little to do with Ruby, why did I g
 
 <a data-flickr-embed="true"  href="https://www.flickr.com/photos/macleod_merrin/25339697663/in/pool-2957873@N23/" title="Group photo"><img src="https://farm2.staticflickr.com/1638/25339697663_cf0954171f_c.jpg" width="800" height="534" alt="Group photo"></a><script async src="//embedr.flickr.com/assets/client-code.js" charset="utf-8"></script>
 
-*TODO:* Think about starting a Railsnoobs meetup in Auckland.
+*TODO:* Think about starting a Railsn00bs meetup in Auckland.
