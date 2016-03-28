@@ -19,6 +19,7 @@ I attended Railscamp 2016 in Wellington NZ last weekend. Just wanted to collect 
 - The Ruby NZ AGM was held - that was kind of interesting. Cool to see a proper organization that "fosters and supports the Ruby programming language, its users and community in New Zealand".
 - Also - [Art of Railscamp](http://artctrl.me/posts/nzrailscamp.html)
 - Couple random pictures on Flickr here: https://www.flickr.com/groups/2957873@N23/
+- There are many more things I'm forgetting.
 
 So as a full time Go developer now with very little to do with Ruby, why did I go to Railscamp? Because the Ruby community is **awesome**. I definitely want to go to future events! Thanks to the organisers and everyone else for making it a great long weekend.
 
